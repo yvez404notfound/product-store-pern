@@ -1,7 +1,7 @@
 import { sql } from "../config/db.js";
 
 // region GET
-const getProducts = async (res, req) => {
+const getProducts = async (req, res) => {
 	try {
 		const products = await sql`
 			SELECT * FROM products 
@@ -22,8 +22,8 @@ const getProducts = async (res, req) => {
 	}
 };
 
-const getProduct = async (res, req) => {
-	const id = req.id;
+const getProduct = async (req, res) => {
+	const { id } = req.params;
 
 	try {
 		const product = await sql`
@@ -47,7 +47,7 @@ const getProduct = async (res, req) => {
 // endregion
 
 //region POST
-const createProduct = async (res, req) => {
+const createProduct = async (req, res) => {
 	const { name, price, image } = req.body;
 
 	if (!name || !price || !image) {
@@ -58,7 +58,7 @@ const createProduct = async (res, req) => {
 	}
 
 	try {
-		const response = await sql`
+		const product = await sql`
 			INSERT INTO products (name, price, image)
 			VALUES (${name}, ${price}, ${image})
 			RETURNING *
@@ -66,7 +66,7 @@ const createProduct = async (res, req) => {
 
 		return res.status(201).json({
 			status: "Created",
-			data: response,
+			data: product,
 			message: "New product created.",
 		});
 	} catch (error) {
@@ -80,20 +80,70 @@ const createProduct = async (res, req) => {
 //endregion
 
 //region PUT
-const updateProduct = async (res, req) => {
-	return res.status(200).json({
-		status: "Success",
-		message: "API endpoint is working",
-	});
+const updateProduct = async (req, res) => {
+	const { id } = req.params;
+	const { name, price, image } = req.body;
+
+	try {
+		const updatedProduct = await sql`
+			UPDATE products
+			SET name=${name}, price=${price}, image=${image}
+			WHERE id=${id}
+			RETURNING *
+		`;
+
+		if (updatedProduct.length === 0) {
+			return res.status(404).json({
+				status: "Not Found",
+				message: "Product does not exists.",
+			});
+		}
+
+		return res.status(200).json({
+			status: "Success",
+			message: "Product updated successfully.",
+			data: updatedProduct,
+		});
+	} catch (error) {
+		console.log("updateProduct Error: ", error);
+		return res.status(500).json({
+			status: "Failed",
+			message: "Internal Server Error",
+		});
+	}
 };
 //endregion
 
 //region DELETE
-const deleteProduct = async (res, req) => {
-	return res.status(200).json({
-		status: "Success",
-		message: "API endpoint is working",
-	});
+const deleteProduct = async (req, res) => {
+	const { id } = req.params;
+
+	try {
+		const deletedProduct = await sql`
+			DELETE FROM products
+			WHERE id=${id}
+			RETURNING *
+		`;
+
+		if (deletedProduct.length === 0) {
+			return res.status(404).json({
+				status: "Not Found",
+				message: "Product does not exists.",
+			});
+		}
+
+		return res.status(200).json({
+			status: "Success",
+			message: "Product deleted successfully.",
+			data: deletedProduct,
+		});
+	} catch (error) {
+		console.log("deleteProduct Error: ", error);
+		return res.status(500).json({
+			status: "Failed",
+			message: "Internal Server Error",
+		});
+	}
 };
 //endregion
 

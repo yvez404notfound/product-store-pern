@@ -25,7 +25,7 @@ app.get("/api/v1/test", (res, req) => {
 		message: "API endpoint is working",
 	});
 });
-app.use("/api/v1/product", productRoutes);
+app.use("/api/v1/products", productRoutes);
 // endregion
 
 const initDB = async () => {
